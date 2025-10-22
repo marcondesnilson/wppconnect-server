@@ -1,7 +1,9 @@
+# Dockerfile alternativo para resolver problemas com Sharp
 FROM node:22.20.0-alpine AS base
 WORKDIR /usr/src/wpp-server
 ENV NODE_ENV=production PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
-COPY package.json ./
+
+# Instalar dependências do sistema necessárias para Sharp
 RUN apk update --no-cache && \
     apk add --no-cache \
     vips \
@@ -14,13 +16,22 @@ RUN apk update --no-cache && \
     python3 \
     py3-pip \
     && rm -rf /var/cache/apk/*
+
+# Copiar package.json e instalar dependências
+COPY package.json ./
 RUN yarn install --production --pure-lockfile && \
     yarn cache clean
+
+# Forçar reinstalação do Sharp com configurações específicas
+RUN yarn remove sharp || true && \
+    npm config set sharp_binary_host "https://github.com/lovell/sharp-libvips/releases/download" && \
+    npm config set sharp_libvips_binary_host "https://github.com/lovell/sharp-libvips/releases/download" && \
+    yarn add sharp@^0.33.5 --ignore-engines
 
 FROM base AS build
 WORKDIR /usr/src/wpp-server
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
-COPY package.json  ./
+COPY package.json ./
 RUN yarn install --production=false --pure-lockfile
 RUN yarn cache clean
 COPY . .
@@ -32,8 +43,9 @@ RUN apk add --no-cache chromium
 RUN yarn cache clean
 COPY . .
 COPY --from=build /usr/src/wpp-server/ /usr/src/wpp-server/
-# Reinstalar Sharp para garantir compatibilidade com Alpine musl
-RUN yarn remove sharp && \
-    yarn add sharp --ignore-engines
+
+# Verificar se Sharp está funcionando
+RUN node -e "console.log('Testing Sharp...'); const sharp = require('sharp'); console.log('Sharp version:', sharp.versions);"
+
 EXPOSE 21465
 ENTRYPOINT ["node", "dist/server.js"]
