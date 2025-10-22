@@ -32,8 +32,5 @@ RUN apk add --no-cache chromium
 RUN yarn cache clean
 COPY . .
 COPY --from=build /usr/src/wpp-server/ /usr/src/wpp-server/
-# Reinstalar Sharp para garantir compatibilidade com Alpine musl
-RUN yarn remove sharp && \
-    yarn add sharp --ignore-engines
 EXPOSE 21465
 ENTRYPOINT ["node", "dist/server.js"]
