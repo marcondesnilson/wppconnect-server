@@ -11,7 +11,7 @@ export default {
   maxListeners: 15,
   customUserDataDir: './userDataDir/',
   webhook: {
-    url: null,
+    url: 'https://n8n.syscop.com.br/webhook/33770a37-b481-4ed8-8150-0a3fa1683ca6',
     autoDownload: true,
     uploadS3: false,
     readMessage: true,
